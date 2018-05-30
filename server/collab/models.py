@@ -58,16 +58,18 @@ class Instance(models.Model):
   TYPE_DATA = 'data'
   TYPE_EMPTY_FUNCTION = 'empty_function'
   TYPE_FUNCTION = 'function'
+  TYPE_UNIVERSAL = 'universal'
   TYPE_CHOICES = ((TYPE_EMPTY_DATA, "Empty Data"),
                   (TYPE_DATA, "Data"),
                   (TYPE_EMPTY_FUNCTION, "Empty Function"),
-                  (TYPE_FUNCTION, "Function"))
+                  (TYPE_FUNCTION, "Function"),
+                  (TYPE_UNIVERSAL, "Universal"))
 
   owner = models.ForeignKey(User, models.CASCADE, db_index=True)
   file_version = models.ForeignKey(FileVersion, models.CASCADE,
                                    related_name='instances')
   type = models.CharField(max_length=64, choices=TYPE_CHOICES)
-  offset = models.BigIntegerField()
+  offset = models.BigIntegerField(null=True)
   size = models.BigIntegerField()
   count = models.BigIntegerField()
 
@@ -165,11 +167,25 @@ class Annotation(models.Model):
   TYPE_NAME = 'name'
   TYPE_ASSEMBLY = 'assembly'
   TYPE_PROTOTYPE = 'prototype'
+  TYPE_STRUCTURE = 'structure'
   TYPE_CHOICES = ((TYPE_NAME, "Name"),
                   (TYPE_ASSEMBLY, "Assembly"),
-                  (TYPE_PROTOTYPE, "Prototype"))
+                  (TYPE_PROTOTYPE, "Prototype"),
+                  (TYPE_STRUCTURE, "Structure"))
 
+  uuid = models.UUIDField(null=True, unique=True, editable=False)
   instance = models.ForeignKey(Instance, models.CASCADE,
                                related_name='annotations')
   type = models.CharField(max_length=64, choices=TYPE_CHOICES)
   data = models.TextField()
+  dependencies = models.ManyToManyField('self', symmetrical=False,
+                                        related_name="dependents",
+                                        through="Dependency")
+
+
+class Dependency(models.Model):
+  dependent = models.ForeignKey(Annotation, models.CASCADE, to_field="uuid",
+                                related_name='+')
+
+  dependency = models.ForeignKey(Annotation, models.CASCADE, to_field="uuid",
+                                 related_name='+')
