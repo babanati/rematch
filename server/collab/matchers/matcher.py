@@ -8,7 +8,7 @@ class Matcher(object):
                               "implemented".format(cls))
 
   @staticmethod
-  def get_filter(cls):
+  def get_filter():
     return Q()
 
   @classmethod
