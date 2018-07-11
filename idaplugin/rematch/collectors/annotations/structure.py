@@ -42,12 +42,9 @@ class StructureAnnotation(annotation.DependencyAnnotation):
     d['union'] = ida_struct.is_union(struc_id)
     # TODO: struct alignment, hidden, listed
 
-    print(d['name'], struc_id)
-
     d['members'] = {}
     member_idx = 0
     while member_idx != idaapi.BADADDR:
-        print(d['name'], struc_id, member_idx)
         member = struct.get_member(member_idx)
         d['members'][member_idx] = self.member_data(member)
         member_idx = ida_struct.get_next_member_idx(struct, member.soff)

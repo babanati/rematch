@@ -2,6 +2,9 @@ from django.db import models
 from django.db.models.fields import files
 from django.contrib.auth.models import User
 from django.core.validators import MinLengthValidator
+
+import django_cte
+
 from .validators import idb_validator
 from .strategies import strategy_choices
 from .matchers import matcher_choices
@@ -164,6 +167,7 @@ class Match(models.Model):
 
 
 class Annotation(models.Model):
+  objects = django_cte.CTEManager()
   TYPE_NAME = 'name'
   TYPE_ASSEMBLY = 'assembly'
   TYPE_PROTOTYPE = 'prototype'

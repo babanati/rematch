@@ -113,8 +113,8 @@ class TaskViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin,
       serializer_class = TaskEditSerializer
     return serializer_class
 
-  @paginatable(SlimInstanceSerializer)
   @decorators.detail_route(url_path="locals")
+  @paginatable(SlimInstanceSerializer)
   def locals(self, request, pk):
     del request
     del pk
@@ -125,8 +125,8 @@ class TaskViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin,
     # 'from_instance' match). for those, include the match objects themselves
     return Instance.objects.filter(from_matches__task=task).distinct()
 
-  @paginatable(SlimInstanceSerializer)
   @decorators.detail_route(url_path="remotes")
+  @paginatable(SlimInstanceSerializer)
   def remotes(self, request, pk):
     del request
     del pk
@@ -137,8 +137,8 @@ class TaskViewSet(mixins.CreateModelMixin, mixins.RetrieveModelMixin,
     # by match records of local instances
     return Instance.objects.filter(to_matches__task=task).distinct()
 
-  @paginatable(MatchSerializer)
   @decorators.detail_route(url_path="matches")
+  @paginatable(MatchSerializer)
   def matches(self, request, pk):
     del request
     del pk
@@ -198,10 +198,11 @@ class AnnotationViewSet(viewsets.ModelViewSet):
   permission_classes = (permissions.IsAuthenticated,)
   filter_fields = ('instance', 'type', 'data')
 
-  @staticmethod
-  @paginatable(AnnotationSerializer)
   @decorators.list_route()
-  def full_hierarchy(request):
+  @paginatable(AnnotationSerializer)
+  def full_hierarchy(self, request):
+    del self
+
     annotation_ids = request.query_params.getlist('ids')
 
     # TODO: perhaps only provide needed IDs here and fetch them using a
@@ -212,15 +213,16 @@ class AnnotationViewSet(viewsets.ModelViewSet):
       return (Annotation.objects.filter(id__in=annotation_ids)
               # .values("uuid", "instance", "type", "data",
               .values("id", "uuid", depth=value0)
-              .union(cte.join(Annotation, dependencies=cte.col.uuid)
-                        .values("id", "uuid", depth=cte.col.depth + value1)))
+              .union(cte.join(Annotation, dependents=cte.col.uuid)
+                        .values("id", "uuid", depth=cte.col.depth + value1),
+                     all=True))
 
     cte = django_cte.With.recursive(make_cte_subquery)
 
-    annotations = (cte.join(Annotation, dependencies=cte.col.uuid)
-                       .with_cte(cte)
-                       .annotate(depth=cte.col.depth)
-                       .order_by("depth"))
+    annotations = (cte.join(Annotation, id=cte.col.id)
+                      .with_cte(cte)
+                      .annotate(depth=cte.col.depth)
+                      .order_by("-depth"))
 
     return annotations
 
